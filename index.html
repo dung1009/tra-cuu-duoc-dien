@@ -562,15 +562,15 @@
 </head>
 <body>
 
-<div class="demo-banner" id="demoBanner">
-  ⚠️ <b>Đang dùng webhook TEST</b> — n8n chỉ lắng nghe 1 request rồi tắt. Trước mỗi lần bấm "Tra cứu" phải vào n8n bấm <b>"Execute workflow"</b>. Khi sẵn sàng dùng thật, hãy Activate workflow và đổi URL sang dạng <code>/webhook/</code>.
-  <button onclick="document.getElementById('demoBanner').style.display='none'" style="margin-left:8px; background:transparent; border:1px solid #92400e; color:#78350f; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Ẩn</button>
+<div class="demo-banner" id="demoBanner" style="background:#dcfce7; border-bottom:1px solid #86efac; color:#14532d;">
+  ✅ <b>Đang dùng webhook PRODUCTION</b> — Workflow n8n cần được <b>Activate</b> để hoạt động. URL dạng <code>/webhook/</code> nhận request bất cứ lúc nào (không cần bấm Execute workflow).
+  <button onclick="document.getElementById('demoBanner').style.display='none'" style="margin-left:8px; background:transparent; border:1px solid #166534; color:#166534; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Ẩn</button>
 </div>
 
 <!-- WEBHOOK CONFIG PANEL -->
 <div style="background:#f0f9ff; border-bottom:1px solid #bae6fd; padding:8px 16px; text-align:center; font-size:12px;">
   <label style="color:#075985;"><b>Webhook URL:</b></label>
-  <input type="text" id="webhookUrl" value="https://n8n.cpc1hn.com.vn/webhook-test/7fa802fe-7670-4fc2-93b2-24c2d4529c91" style="width:60%; max-width:600px; padding:4px 8px; border:1px solid #7dd3fc; border-radius:4px; font-family:monospace; font-size:11px; margin:0 8px;">
+  <input type="text" id="webhookUrl" value="https://n8n.cpc1hn.com.vn/webhook/2c5bf9e0-c15a-4dbe-8228-cc995df3c4fe" style="width:60%; max-width:600px; padding:4px 8px; border:1px solid #7dd3fc; border-radius:4px; font-family:monospace; font-size:11px; margin:0 8px;">
   <label style="color:#075985;"><input type="checkbox" id="useDemoData"> Dùng dữ liệu demo</label>
 </div>
 
@@ -617,7 +617,7 @@
     <!-- SEARCH FORM -->
     <section class="search-card">
       <h2>Tra cứu chuyên luận</h2>
-      <p class="subtitle">Nhập hoạt chất và dạng bào chế. Hệ thống sẽ tự sửa chính tả, dịch sang chuẩn BP và tìm trên DĐVN, USP, BP.</p>
+      <p class="subtitle">Nhập hoạt chất (bắt buộc) và dạng bào chế (tùy chọn). Hệ thống sẽ tự sửa chính tả, dịch sang chuẩn BP và tìm trên DĐVN, USP, BP.</p>
       <form id="searchForm" onsubmit="handleSearch(event)">
         <div class="form-row">
           <div class="form-field">
@@ -626,8 +626,9 @@
             <div class="field-note">Hệ thống sẽ tự sửa chính tả (Paracetamon → Paracetamol)</div>
           </div>
           <div class="form-field">
-            <label for="dosageForm">Dạng bào chế *</label>
-            <input type="text" id="dosageForm" list="dosageFormSuggestions" placeholder="Vd: Viên nén, Hỗn dịch uống..." required autocomplete="off">
+            <label for="dosageForm">Dạng bào chế <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(tùy chọn)</span></label>
+            <input type="text" id="dosageForm" list="dosageFormSuggestions" placeholder="Vd: Viên nén, Hỗn dịch uống... (để trống nếu tra nguyên liệu)" autocomplete="off">
+            <div class="field-note">Để trống để tra cứu nguyên liệu/hoạt chất (không gắn dạng bào chế cụ thể)</div>
             <datalist id="dosageFormSuggestions">
               <option value="Viên nén">
               <option value="Viên nén bao phim">
@@ -894,7 +895,7 @@
   async function handleSearch(e) {
     e.preventDefault();
     const ingredient = document.getElementById("activeIngredient").value.trim();
-    const form = document.getElementById("dosageForm").value;
+    const form = document.getElementById("dosageForm").value.trim();   // có thể rỗng
     const webhookUrl = document.getElementById("webhookUrl").value.trim();
     const useDemoData = document.getElementById("useDemoData").checked;
     if (!ingredient) return;
@@ -944,7 +945,9 @@
           "Dạng bào chế": form,
           // Backup keys in case workflow uses English
           "active_ingredient": ingredient,
-          "dosage_form": form
+          "dosage_form": form,
+          // Flag báo cho n8n biết user để trống dạng bào chế
+          "search_all_forms": form === ""
         })
       });
 
@@ -1068,11 +1071,11 @@
         </div>
         <h4 style="margin-top:16px; color:var(--primary-dark);">Checklist xử lý:</h4>
         <ul style="padding-left:22px; margin-top:8px;">
-          <li>Đã vào n8n bấm <b>"Execute workflow"</b> trước khi tra cứu chưa? (URL <code>webhook-test</code> chỉ nhận 1 request)</li>
+          <li>Workflow trong n8n đã được <b>Activate</b> chưa? (URL <code>/webhook/</code> chỉ hoạt động khi workflow active)</li>
           <li>Workflow đã được kết nối node <b>Webhook trigger</b> → node đầu tiên (Correction)?</li>
           <li>Node cuối cùng có phải <b>"Respond to Webhook"</b> trả về output của AI Agent?</li>
           <li>Nếu lỗi CORS: trong n8n thêm header <code>Access-Control-Allow-Origin: *</code> ở node Respond to Webhook → Options.</li>
-          <li>Test trực tiếp bằng cURL: <code>curl -X POST '${escapeHtml(document.getElementById("webhookUrl").value)}' -H 'Content-Type: application/json' -d '{"Tên hoạt chất":"Paracetamol","Dạng bào chế":"Viên nén"}'</code></li>
+          <li>Test trực tiếp bằng cURL: <code>curl -X POST '${escapeHtml(document.getElementById("webhookUrl").value)}' -H 'Content-Type: application/json' -d '{"Tên hoạt chất":"Paracetamol","Dạng bào chế":""}'</code></li>
         </ul>
       </div>`;
   }
@@ -1095,7 +1098,10 @@
 
   function updateResultHeader(ingredient, form) {
     const titleEl = document.querySelector(".result-title");
-    titleEl.childNodes[0].nodeValue = `📋 ${ingredient} — ${form} `;
+    const titleText = form 
+      ? `📋 ${ingredient} — ${form} `
+      : `📋 ${ingredient} (tất cả dạng bào chế) `;
+    titleEl.childNodes[0].nodeValue = titleText;
     const now = new Date();
     const dateStr = now.toLocaleString("vi-VN");
     titleEl.querySelector("small")?.remove();
