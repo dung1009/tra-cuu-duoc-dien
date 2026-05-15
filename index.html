@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tra cứu Dược điển - So sánh tiêu chuẩn QC</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  :root {
+    --primary: #0d6e6e;
+    --primary-dark: #084d4d;
+    --primary-light: #e0f2f2;
+    --accent: #d97706;
+    --bg: #f7f9fb;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #2563eb;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  /* ============ HEADER ============ */
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 18px 32px;
+    box-shadow: var(--shadow-lg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 18px;
+  }
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .header-meta {
+    font-size: 13px;
+    opacity: 0.9;
+  }
+
+  /* ============ LAYOUT ============ */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .container { grid-template-columns: 1fr; padding: 16px; }
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 88px;
+  }
+  .sidebar h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .history-list { list-style: none; }
+  .history-item {
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    margin-bottom: 4px;
+    transition: all 0.15s;
+  }
+  .history-item:hover {
+    background: var(--primary-light);
+    border-left-color: var(--primary);
+  }
+  .history-item.active {
+    background: var(--primary-light);
+    border-left-color: var(--primary);
+    font-weight: 600;
+  }
+  .history-item .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+  .sidebar-empty {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 20px 0;
+  }
+
+  /* ============ MAIN ============ */
+  .main { min-width: 0; }
+
+  /* ============ SEARCH CARD ============ */
+  .search-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .search-card h2 {
+    font-size: 18px;
+    margin-bottom: 4px;
+    color: var(--primary-dark);
+  }
+  .search-card .subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+  @media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+  }
+  .form-field { display: flex; flex-direction: column; }
+  .form-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .form-field input,
+  .form-field select {
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    transition: border 0.15s, box-shadow 0.15s;
+  }
+  .form-field input:focus,
+  .form-field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(13,110,110,0.1);
+  }
+  .btn {
+    padding: 11px 22px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary {
+    background: white;
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+  }
+  .btn-secondary:hover { background: var(--primary-light); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    padding: 6px 10px;
+  }
+  .btn-ghost:hover { background: var(--bg); color: var(--text); }
+
+  /* ============ LOADING ============ */
+  .loading-state {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px;
+    text-align: center;
+    display: none;
+  }
+  .loading-state.active { display: block; }
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-steps {
+    list-style: none;
+    margin-top: 20px;
+    text-align: left;
+    max-width: 360px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .loading-steps li {
+    padding: 8px 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .loading-steps li.done { color: var(--success); }
+  .loading-steps li.doing { color: var(--primary); font-weight: 600; }
+  .step-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .loading-steps li.done .step-dot { background: var(--success); }
+  .loading-steps li.doing .step-dot { background: var(--primary); animation: pulse 1s infinite; }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ============ RESULT ============ */
+  .result { display: none; }
+  .result.active { display: block; }
+
+  .result-header {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .result-title { font-size: 20px; color: var(--primary-dark); }
+  .result-title small {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 400;
+    margin-top: 4px;
+  }
+  .result-actions { display: flex; gap: 8px; }
+
+  .info-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .info-card h3 {
+    font-size: 14px;
+    color: var(--primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+  }
+  .badge.success { background: #d1fae5; color: #065f46; }
+  .badge.warning { background: #fef3c7; color: #92400e; }
+  .badge.info { background: #dbeafe; color: #1e40af; }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .info-item {
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: 6px;
+    border-left: 3px solid var(--primary);
+  }
+  .info-item .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .info-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+    word-break: break-word;
+  }
+
+  .sources-list {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .source-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-dark);
+  }
+  .source-chip::before {
+    content: "✓";
+    background: var(--primary);
+    color: white;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+  }
+
+  /* ============ COMPARISON TABLE ============ */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  table.comparison {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 700px;
+  }
+  table.comparison th,
+  table.comparison td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  table.comparison th {
+    background: var(--primary-dark);
+    color: white;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    font-size: 13px;
+  }
+  table.comparison th:first-child { width: 180px; }
+  table.comparison td:first-child {
+    font-weight: 600;
+    background: var(--bg);
+    color: var(--primary-dark);
+  }
+  table.comparison tr:hover td { background: #fafbfc; }
+  table.comparison tr:hover td:first-child { background: var(--primary-light); }
+  table.comparison .empty-cell {
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* ============ ANALYSIS SECTIONS ============ */
+  .analysis-section h4 {
+    font-size: 14px;
+    color: var(--primary-dark);
+    margin: 14px 0 8px;
+  }
+  .analysis-section ul {
+    padding-left: 22px;
+    color: var(--text);
+  }
+  .analysis-section ul li {
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  .note-box {
+    padding: 14px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 14px;
+    border-left: 4px solid;
+  }
+  .note-box.info { background: #eff6ff; border-color: var(--info); color: #1e3a8a; }
+  .note-box.warning { background: #fffbeb; border-color: var(--warning); color: #78350f; }
+  .note-box.success { background: #f0fdf4; border-color: var(--success); color: #14532d; }
+
+  /* ============ EMPTY STATE ============ */
+  .empty-state {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 60px 24px;
+    text-align: center;
+  }
+  .empty-state .icon {
+    font-size: 56px;
+    margin-bottom: 12px;
+    opacity: 0.4;
+  }
+  .empty-state h3 {
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .empty-state p {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  /* ============ PRINT STYLES ============ */
+  @media print {
+    .header, .sidebar, .search-card, .result-actions, .btn { display: none !important; }
+    body { background: white; font-size: 11pt; }
+    .container { display: block; padding: 0; max-width: 100%; }
+    .main { width: 100%; }
+    .info-card, .result-header {
+      box-shadow: none;
+      border: 1px solid #ccc;
+      page-break-inside: avoid;
+      margin-bottom: 12px;
+    }
+    table.comparison th { background: #084d4d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table.comparison td:first-child { background: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .source-chip { background: #e0f2f2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { margin: 1.5cm; }
+  }
+
+  /* ============ MARKDOWN OUTPUT (AI Agent) ============ */
+  .markdown-output { padding: 8px 4px; }
+  .markdown-output h1, .markdown-output h2 {
+    color: var(--primary-dark);
+    margin: 20px 0 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-light);
+    font-size: 18px;
+  }
+  .markdown-output h2:first-child { margin-top: 0; }
+  .markdown-output h3 {
+    color: var(--primary-dark);
+    margin: 16px 0 8px;
+    font-size: 15px;
+  }
+  .markdown-output h4 {
+    color: var(--primary-dark);
+    margin: 12px 0 6px;
+    font-size: 14px;
+  }
+  .markdown-output p {
+    margin-bottom: 10px;
+    line-height: 1.65;
+  }
+  .markdown-output ul, .markdown-output ol {
+    padding-left: 22px;
+    margin-bottom: 10px;
+  }
+  .markdown-output li { margin-bottom: 4px; }
+  .markdown-output strong { color: var(--primary-dark); }
+  .markdown-output code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .markdown-output blockquote {
+    border-left: 4px solid var(--primary);
+    background: var(--primary-light);
+    padding: 10px 14px;
+    margin: 10px 0;
+    color: var(--primary-dark);
+  }
+  .markdown-output hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0;
+  }
+
+  /* ============ MISC ============ */
+  .field-note {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .demo-banner {
+    background: #fef3c7;
+    color: #78350f;
+    padding: 8px 16px;
+    text-align: center;
+    font-size: 12px;
+    border-bottom: 1px solid #fde68a;
+  }
+  .demo-banner b { font-weight: 700; }
+  @media print { .demo-banner { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="demo-banner" id="demoBanner">
+  ⚠️ <b>Đang dùng webhook TEST</b> — n8n chỉ lắng nghe 1 request rồi tắt. Trước mỗi lần bấm "Tra cứu" phải vào n8n bấm <b>"Execute workflow"</b>. Khi sẵn sàng dùng thật, hãy Activate workflow và đổi URL sang dạng <code>/webhook/</code>.
+  <button onclick="document.getElementById('demoBanner').style.display='none'" style="margin-left:8px; background:transparent; border:1px solid #92400e; color:#78350f; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Ẩn</button>
+</div>
+
+<!-- WEBHOOK CONFIG PANEL -->
+<div style="background:#f0f9ff; border-bottom:1px solid #bae6fd; padding:8px 16px; text-align:center; font-size:12px;">
+  <label style="color:#075985;"><b>Webhook URL:</b></label>
+  <input type="text" id="webhookUrl" value="https://n8n.cpc1hn.com.vn/webhook-test/7fa802fe-7670-4fc2-93b2-24c2d4529c91" style="width:60%; max-width:600px; padding:4px 8px; border:1px solid #7dd3fc; border-radius:4px; font-family:monospace; font-size:11px; margin:0 8px;">
+  <label style="color:#075985;"><input type="checkbox" id="useDemoData"> Dùng dữ liệu demo</label>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🔬</div>
+      <div>
+        <div>Tra cứu Dược điển</div>
+        <div style="font-size:11px; font-weight:400; opacity:0.85; margin-top:2px;">So sánh tiêu chuẩn QC liên Dược điển</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span id="userBadge">Người dùng: nguyenhuutuandung@gmail.com</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <h3>📂 Lịch sử tra cứu</h3>
+    <ul class="history-list" id="historyList">
+      <li class="history-item active" onclick="loadHistoryItem(0)">
+        <div>Paracetamol — Viên nén</div>
+        <div class="meta">15/05/2026 · 3 nguồn</div>
+      </li>
+      <li class="history-item" onclick="loadHistoryItem(1)">
+        <div>Amoxicillin — Viên nang</div>
+        <div class="meta">14/05/2026 · 2 nguồn</div>
+      </li>
+      <li class="history-item" onclick="loadHistoryItem(2)">
+        <div>Ibuprofen — Hỗn dịch</div>
+        <div class="meta">12/05/2026 · 3 nguồn</div>
+      </li>
+    </ul>
+    <button class="btn btn-ghost" style="width:100%; margin-top:12px; text-align:left;" onclick="clearHistory()">🗑️ Xóa lịch sử</button>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- SEARCH FORM -->
+    <section class="search-card">
+      <h2>Tra cứu chuyên luận</h2>
+      <p class="subtitle">Nhập hoạt chất và dạng bào chế. Hệ thống sẽ tự sửa chính tả, dịch sang chuẩn BP và tìm trên DĐVN, USP, BP.</p>
+      <form id="searchForm" onsubmit="handleSearch(event)">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="activeIngredient">Tên hoạt chất *</label>
+            <input type="text" id="activeIngredient" placeholder="Vd: Paracetamol, Amoxicillin..." required>
+            <div class="field-note">Hệ thống sẽ tự sửa chính tả (Paracetamon → Paracetamol)</div>
+          </div>
+          <div class="form-field">
+            <label for="dosageForm">Dạng bào chế *</label>
+            <input type="text" id="dosageForm" list="dosageFormSuggestions" placeholder="Vd: Viên nén, Hỗn dịch uống..." required autocomplete="off">
+            <datalist id="dosageFormSuggestions">
+              <option value="Viên nén">
+              <option value="Viên nén bao phim">
+              <option value="Viên nén bao đường">
+              <option value="Viên nén sủi bọt">
+              <option value="Viên nén nhai">
+              <option value="Viên nén ngậm">
+              <option value="Viên nén giải phóng kéo dài">
+              <option value="Viên nang cứng">
+              <option value="Viên nang mềm">
+              <option value="Viên đặt">
+              <option value="Viên hoàn">
+              <option value="Bột pha hỗn dịch">
+              <option value="Bột pha tiêm">
+              <option value="Bột pha uống">
+              <option value="Cốm">
+              <option value="Cốm sủi">
+              <option value="Hỗn dịch uống">
+              <option value="Hỗn dịch tiêm">
+              <option value="Nhũ tương">
+              <option value="Siro">
+              <option value="Dung dịch uống">
+              <option value="Dung dịch tiêm">
+              <option value="Dung dịch truyền">
+              <option value="Dung dịch nhỏ mắt">
+              <option value="Dung dịch nhỏ mũi">
+              <option value="Thuốc tiêm đông khô">
+              <option value="Thuốc đặt âm đạo">
+              <option value="Thuốc đặt trực tràng">
+              <option value="Kem bôi da">
+              <option value="Mỡ bôi da">
+              <option value="Gel">
+              <option value="Thuốc xịt mũi">
+              <option value="Thuốc xịt họng">
+              <option value="Khí dung">
+              <option value="Miếng dán">
+              <option value="Nguyên liệu (API)">
+            </datalist>
+            <div class="field-note">Gõ tự do hoặc chọn từ gợi ý · Sẽ dịch sang chuẩn BP English</div>
+          </div>
+          <div class="form-field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary" id="searchBtn">🔍 Tra cứu</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- LOADING -->
+    <section class="loading-state" id="loadingState">
+      <div class="spinner"></div>
+      <h3 style="color: var(--primary-dark);">Đang xử lý workflow n8n...</h3>
+      <p style="color: var(--text-muted); margin-top: 4px; font-size: 13px;">Quá trình có thể mất 30-60 giây</p>
+      <ul class="loading-steps" id="loadingSteps">
+        <li data-step="1"><span class="step-dot"></span> Sửa chính tả & dịch dạng bào chế (Gemini)</li>
+        <li data-step="2"><span class="step-dot"></span> Tìm Google Drive (DĐVN PDF)</li>
+        <li data-step="3"><span class="step-dot"></span> Scrape USP & British Pharmacopoeia</li>
+        <li data-step="4"><span class="step-dot"></span> Trích xuất chuyên luận (HTML/PDF parser)</li>
+        <li data-step="5"><span class="step-dot"></span> AI Agent so sánh tiêu chuẩn</li>
+      </ul>
+    </section>
+
+    <!-- RESULT -->
+    <section class="result active" id="resultSection">
+
+      <!-- HEADER -->
+      <div class="result-header">
+        <div>
+          <div class="result-title">📋 Paracetamol — Viên nén</div>
+          <small>Tra cứu lúc 15/05/2026 14:32 · ID: WF-2026051501</small>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ In / Lưu PDF</button>
+          <button class="btn btn-secondary" onclick="alert('Đã lưu vào lịch sử')">💾 Lưu lịch sử</button>
+        </div>
+      </div>
+
+      <!-- THÔNG TIN HOẠT CHẤT -->
+      <div class="info-card">
+        <h3>🧪 Thông tin hoạt chất (sau khi chuẩn hóa)</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="label">Nhập gốc</div>
+            <div class="value">Paracetamol</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Đã sửa chính tả</div>
+            <div class="value">Paracetamol</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Tên INN chuẩn</div>
+            <div class="value">Paracetamol</div>
+          </div>
+          <div class="info-item">
+            <div class="label">Dạng bào chế (BP English)</div>
+            <div class="value">Paracetamol Tablets</div>
+          </div>
+        </div>
+        <div style="margin-top: 14px;">
+          <div class="label" style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom: 6px;">Aliases (tên gọi khác)</div>
+          <span class="badge">Acetaminophen</span>
+          <span class="badge">APAP</span>
+          <span class="badge">N-acetyl-p-aminophenol</span>
+        </div>
+      </div>
+
+      <!-- NGUỒN -->
+      <div class="info-card">
+        <h3>📚 Nguồn dược điển tìm được <span class="badge success">3 nguồn</span></h3>
+        <div class="sources-list">
+          <div class="source-chip">DƯỢC ĐIỂN VIỆT NAM V</div>
+          <div class="source-chip">USP - DƯỢC ĐIỂN MỸ (43)</div>
+          <div class="source-chip">BP - DƯỢC ĐIỂN ANH (2024)</div>
+        </div>
+        <div class="note-box info" style="margin-top:14px;">
+          <b>Lưu ý quan trọng:</b> Dược điển Việt Nam (DĐVN) là tiêu chuẩn pháp lý bắt buộc tại Việt Nam, được đặt làm cột đầu tiên trong bảng so sánh.
+        </div>
+      </div>
+
+      <!-- BẢNG SO SÁNH -->
+      <div class="info-card">
+        <h3>📊 Bảng so sánh tiêu chuẩn</h3>
+        <div class="table-wrap">
+          <table class="comparison">
+            <thead>
+              <tr>
+                <th>Chỉ tiêu</th>
+                <th>DĐVN V<br><small style="font-weight:400;opacity:0.85;">(Viên nén Paracetamol)</small></th>
+                <th>USP 43<br><small style="font-weight:400;opacity:0.85;">(Acetaminophen Tablets)</small></th>
+                <th>BP 2024<br><small style="font-weight:400;opacity:0.85;">(Paracetamol Tablets)</small></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Định tính (Identification)</td>
+                <td>A. HPLC; B. UV: λmax = 243 nm; C. Phản ứng màu Fe³⁺</td>
+                <td>A. IR; B. HPLC; C. UV trong methanol</td>
+                <td>A. IR; B. TLC; C. Phản ứng nhóm OH-phenol</td>
+              </tr>
+              <tr>
+                <td>Hàm lượng (Assay)</td>
+                <td>Phương pháp: HPLC<br>Giới hạn: <b>95,0 – 105,0%</b></td>
+                <td>Phương pháp: HPLC<br>Giới hạn: <b>90,0 – 110,0%</b></td>
+                <td>Phương pháp: HPLC<br>Giới hạn: <b>95,0 – 105,0%</b></td>
+              </tr>
+              <tr>
+                <td>Tạp chất liên quan</td>
+                <td>p-aminophenol ≤ 0,05%<br>Tạp khác ≤ 0,1%<br>Tổng tạp ≤ 0,2%</td>
+                <td>p-aminophenol ≤ 0,005%<br>Tạp chất K ≤ 0,1%<br>Tổng tạp ≤ 0,2%</td>
+                <td>Tạp J ≤ 0,1%<br>Tạp K ≤ 0,1%<br>Tổng tạp ≤ 0,3%</td>
+              </tr>
+              <tr>
+                <td>Độ hòa tan (Dissolution)</td>
+                <td>Đệm phosphat pH 5,8; cánh khuấy 50 rpm<br>Q = 80% trong 30 phút</td>
+                <td>Phosphate buffer pH 5,8; paddle 50 rpm<br>Q = 80% trong 30 phút</td>
+                <td>Phosphate buffer pH 5,8; paddle 50 rpm<br>Q = 75% trong 45 phút</td>
+              </tr>
+              <tr>
+                <td>Độ đồng đều đơn vị liều</td>
+                <td>Đạt yêu cầu Phụ lục 11.2</td>
+                <td>Đạt USP &lt;905&gt;</td>
+                <td>Đạt Appendix XII C</td>
+              </tr>
+              <tr>
+                <td>Mất khối lượng do làm khô</td>
+                <td>≤ 0,5%</td>
+                <td><span class="empty-cell">Không quy định</span></td>
+                <td>≤ 0,5%</td>
+              </tr>
+              <tr>
+                <td>Giới hạn kim loại nặng</td>
+                <td>≤ 20 ppm</td>
+                <td>Đạt USP &lt;231&gt;</td>
+                <td>≤ 20 ppm</td>
+              </tr>
+              <tr>
+                <td>HPLC — Cột phân tích</td>
+                <td>C18, 250×4,6 mm, 5 μm</td>
+                <td>L1 (C18), 250×4,6 mm, 5 μm</td>
+                <td>End-capped C18, 250×4,6 mm, 5 μm</td>
+              </tr>
+              <tr>
+                <td>HPLC — Bước sóng</td>
+                <td>243 nm</td>
+                <td>243 nm</td>
+                <td>243 nm</td>
+              </tr>
+              <tr>
+                <td>HPLC — Tốc độ dòng</td>
+                <td>1,5 mL/phút</td>
+                <td>1,5 mL/phút</td>
+                <td>1,5 mL/phút</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ĐÁNH GIÁ -->
+      <div class="info-card analysis-section">
+        <h3>⚖️ Đánh giá mức độ khắt khe</h3>
+
+        <h4>1. Khác biệt về giới hạn hàm lượng</h4>
+        <ul>
+          <li><b>DĐVN V và BP 2024</b> đều quy định 95,0 – 105,0% — khắt khe hơn USP.</li>
+          <li><b>USP 43</b> cho phép biên độ rộng hơn: 90,0 – 110,0%.</li>
+        </ul>
+
+        <h4>2. Khác biệt về tạp chất</h4>
+        <ul>
+          <li><b>USP nghiêm ngặt nhất với p-aminophenol</b>: giới hạn 0,005% — thấp hơn 10 lần so với DĐVN (0,05%).</li>
+          <li><b>BP và USP</b> định danh cụ thể tạp J, K theo Ph. Eur. — chi tiết hơn DĐVN.</li>
+          <li><b>BP</b> cho phép tổng tạp cao hơn (0,3%) so với DĐVN và USP (0,2%).</li>
+        </ul>
+
+        <h4>3. Khác biệt về độ hòa tan</h4>
+        <ul>
+          <li><b>DĐVN và USP</b>: Q = 80% trong 30 phút (khắt khe hơn).</li>
+          <li><b>BP</b>: Q = 75% trong 45 phút (linh hoạt hơn).</li>
+        </ul>
+
+        <div class="note-box success">
+          <b>Kết luận:</b> Tiêu chuẩn nghiêm ngặt nhất tổng thể là <b>USP 43</b> (tạp p-aminophenol cực thấp 0,005%), tiếp theo là <b>DĐVN V</b> (hàm lượng chặt, hoà tan nhanh), <b>BP 2024</b> chi tiết về tạp định danh nhưng tổng tạp rộng nhất.
+        </div>
+      </div>
+
+      <!-- LƯU Ý QC -->
+      <div class="info-card analysis-section">
+        <h3>✅ Tổng kết và lưu ý kiểm nghiệm</h3>
+
+        <h4>Đối với R&D</h4>
+        <ul>
+          <li>Khi phát triển công thức nhắm xuất khẩu sang thị trường Mỹ, cần kiểm soát p-aminophenol ở mức ≤ 0,005% — đòi hỏi nguồn nguyên liệu API chất lượng cao.</li>
+          <li>Cần xây dựng quy trình HPLC chung phù hợp cả 3 dược điển (cùng cột C18, λ = 243 nm, dòng 1,5 mL/min).</li>
+        </ul>
+
+        <h4>Đối với QA/QC</h4>
+        <ul>
+          <li>Nếu áp dụng DĐVN V: kiểm tra <b>p-aminophenol ≤ 0,05%</b>, hàm lượng <b>95-105%</b>, hoà tan <b>Q=80%/30 phút</b>.</li>
+          <li>Bộ tiêu chuẩn nội bộ nên lấy giới hạn nghiêm khắc nhất từ cả 3 dược điển để đảm bảo tính phổ quát.</li>
+          <li>Lưu ý chuẩn so sánh p-aminophenol theo Ph. Eur. (cùng nguồn với BP và USP) để chuẩn hoá kết quả.</li>
+        </ul>
+
+        <h4>Khuyến nghị tiêu chuẩn áp dụng</h4>
+        <div class="note-box warning">
+          <b>Khuyến nghị:</b> Áp dụng <b>DĐVN V</b> làm tiêu chuẩn pháp lý cho thị trường Việt Nam. Đồng thời lập tiêu chuẩn nội bộ kết hợp giới hạn p-aminophenol theo USP (0,005%) để đảm bảo xuất khẩu được sang Mỹ/EU.
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<script>
+  // ============ Sample data for prototype ============
+  const sampleHistory = [
+    { name: "Paracetamol", form: "Viên nén", date: "15/05/2026", sources: 3 },
+    { name: "Amoxicillin", form: "Viên nang", date: "14/05/2026", sources: 2 },
+    { name: "Ibuprofen", form: "Hỗn dịch", date: "12/05/2026", sources: 3 }
+  ];
+
+  // ============ Search handler ============
+  async function handleSearch(e) {
+    e.preventDefault();
+    const ingredient = document.getElementById("activeIngredient").value.trim();
+    const form = document.getElementById("dosageForm").value;
+    const webhookUrl = document.getElementById("webhookUrl").value.trim();
+    const useDemoData = document.getElementById("useDemoData").checked;
+    if (!ingredient) return;
+
+    // Hide result, show loading
+    document.getElementById("resultSection").classList.remove("active");
+    document.getElementById("loadingState").classList.add("active");
+    document.getElementById("searchBtn").disabled = true;
+
+    // Reset loading steps
+    const steps = document.querySelectorAll(".loading-steps li");
+    steps.forEach(s => s.classList.remove("done", "doing"));
+
+    // Animate progress steps (cosmetic, runs in parallel with real request)
+    let stepIdx = 0;
+    const stepTimer = setInterval(() => {
+      if (stepIdx > 0) {
+        steps[stepIdx - 1].classList.remove("doing");
+        steps[stepIdx - 1].classList.add("done");
+      }
+      if (stepIdx < steps.length) {
+        steps[stepIdx].classList.add("doing");
+        stepIdx++;
+      } else {
+        clearInterval(stepTimer);
+      }
+    }, 1500);
+
+    // Demo mode → show static sample
+    if (useDemoData || !webhookUrl) {
+      setTimeout(() => {
+        finishLoading(stepTimer, steps);
+        document.getElementById("resultSection").classList.add("active");
+        document.getElementById("searchBtn").disabled = false;
+        updateResultHeader(ingredient, form);
+      }, 4000);
+      return;
+    }
+
+    // Real webhook call
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          "Tên hoạt chất": ingredient,
+          "Dạng bào chế": form,
+          // Backup keys in case workflow uses English
+          "active_ingredient": ingredient,
+          "dosage_form": form
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} — ${response.statusText}`);
+      }
+
+      const contentType = response.headers.get("content-type") || "";
+      let data;
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        // Try parse as JSON anyway, otherwise treat as markdown
+        try { data = JSON.parse(text); } catch { data = { output: text }; }
+      }
+
+      finishLoading(stepTimer, steps);
+      renderWebhookResponse(data, ingredient, form);
+      document.getElementById("resultSection").classList.add("active");
+      document.getElementById("searchBtn").disabled = false;
+
+    } catch (err) {
+      finishLoading(stepTimer, steps);
+      showError(err.message, ingredient, form);
+      document.getElementById("searchBtn").disabled = false;
+    }
+  }
+
+  function finishLoading(stepTimer, steps) {
+    clearInterval(stepTimer);
+    steps.forEach(s => { s.classList.remove("doing"); s.classList.add("done"); });
+    document.getElementById("loadingState").classList.remove("active");
+  }
+
+  // ============ Render real response from n8n ============
+  function renderWebhookResponse(data, ingredient, form) {
+    // n8n usually wraps response in array; unwrap
+    if (Array.isArray(data)) data = data[0] || {};
+
+    // Try to find the AI Agent's markdown output across common keys
+    const markdown =
+      data.output ||
+      data.text ||
+      data.markdown ||
+      data.result ||
+      data.analysis ||
+      (typeof data === "string" ? data : "") ||
+      (data.json && (data.json.output || data.json.text)) ||
+      "";
+
+    const resultSection = document.getElementById("resultSection");
+
+    if (!markdown || markdown.length < 20) {
+      // No markdown — show raw JSON for debug
+      resultSection.innerHTML = `
+        <div class="result-header">
+          <div>
+            <div class="result-title">📋 ${escapeHtml(ingredient)} — ${escapeHtml(form)}</div>
+            <small>Phản hồi từ webhook (không có markdown output)</small>
+          </div>
+          <div class="result-actions">
+            <button class="btn btn-secondary" onclick="window.print()">🖨️ In</button>
+          </div>
+        </div>
+        <div class="info-card">
+          <h3>📦 Dữ liệu raw từ n8n</h3>
+          <pre style="background:#f1f5f9; padding:14px; border-radius:8px; overflow-x:auto; font-size:12px; line-height:1.5;">${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+          <div class="note-box warning" style="margin-top:12px;">
+            Không tìm thấy field <code>output</code> / <code>text</code> / <code>markdown</code> trong response. Kiểm tra node <b>"Respond to Webhook"</b> trong n8n — cần đảm bảo trả về output của AI Agent.
+          </div>
+        </div>`;
+      return;
+    }
+
+    // Parse markdown → HTML
+    const html = marked.parse(markdown, { breaks: true, gfm: true });
+
+    const now = new Date();
+    resultSection.innerHTML = `
+      <div class="result-header">
+        <div>
+          <div class="result-title">📋 ${escapeHtml(ingredient)} — ${escapeHtml(form)}</div>
+          <small>Tra cứu lúc ${now.toLocaleString("vi-VN")} · ID: WF-${now.getTime().toString().slice(-10)}</small>
+        </div>
+        <div class="result-actions">
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ In / Lưu PDF</button>
+          <button class="btn btn-secondary" onclick="saveCurrentToHistory('${escapeHtml(ingredient)}','${escapeHtml(form)}')">💾 Lưu lịch sử</button>
+        </div>
+      </div>
+      <div class="info-card markdown-output">
+        ${html}
+      </div>`;
+
+    // Style any tables coming out of markdown
+    resultSection.querySelectorAll(".markdown-output table").forEach(t => {
+      t.classList.add("comparison");
+      const wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+  }
+
+  function showError(message, ingredient, form) {
+    const resultSection = document.getElementById("resultSection");
+    resultSection.classList.add("active");
+    resultSection.innerHTML = `
+      <div class="result-header">
+        <div>
+          <div class="result-title">❌ Lỗi kết nối webhook</div>
+          <small>${escapeHtml(ingredient)} — ${escapeHtml(form)}</small>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="note-box" style="background:#fee2e2; border-left:4px solid #dc2626; color:#7f1d1d;">
+          <b>Chi tiết lỗi:</b> ${escapeHtml(message)}
+        </div>
+        <h4 style="margin-top:16px; color:var(--primary-dark);">Checklist xử lý:</h4>
+        <ul style="padding-left:22px; margin-top:8px;">
+          <li>Đã vào n8n bấm <b>"Execute workflow"</b> trước khi tra cứu chưa? (URL <code>webhook-test</code> chỉ nhận 1 request)</li>
+          <li>Workflow đã được kết nối node <b>Webhook trigger</b> → node đầu tiên (Correction)?</li>
+          <li>Node cuối cùng có phải <b>"Respond to Webhook"</b> trả về output của AI Agent?</li>
+          <li>Nếu lỗi CORS: trong n8n thêm header <code>Access-Control-Allow-Origin: *</code> ở node Respond to Webhook → Options.</li>
+          <li>Test trực tiếp bằng cURL: <code>curl -X POST '${escapeHtml(document.getElementById("webhookUrl").value)}' -H 'Content-Type: application/json' -d '{"Tên hoạt chất":"Paracetamol","Dạng bào chế":"Viên nén"}'</code></li>
+        </ul>
+      </div>`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function saveCurrentToHistory(ingredient, form) {
+    const list = document.getElementById("historyList");
+    const li = document.createElement("li");
+    li.className = "history-item active";
+    li.innerHTML = `<div>${ingredient} — ${form}</div><div class="meta">${new Date().toLocaleString("vi-VN")}</div>`;
+    document.querySelectorAll(".history-item").forEach(it => it.classList.remove("active"));
+    list.prepend(li);
+    alert("Đã lưu vào lịch sử (lưu tạm trong trình duyệt)");
+  }
+
+  function updateResultHeader(ingredient, form) {
+    const titleEl = document.querySelector(".result-title");
+    titleEl.childNodes[0].nodeValue = `📋 ${ingredient} — ${form} `;
+    const now = new Date();
+    const dateStr = now.toLocaleString("vi-VN");
+    titleEl.querySelector("small")?.remove();
+    const small = document.createElement("small");
+    small.textContent = `Tra cứu lúc ${dateStr} · ID: WF-${now.getTime().toString().slice(-10)}`;
+    titleEl.appendChild(small);
+  }
+
+  function loadHistoryItem(idx) {
+    document.querySelectorAll(".history-item").forEach((it, i) => {
+      it.classList.toggle("active", i === idx);
+    });
+    const item = sampleHistory[idx];
+    document.getElementById("activeIngredient").value = item.name;
+    document.getElementById("dosageForm").value = item.form;
+  }
+
+  function clearHistory() {
+    if (confirm("Xóa toàn bộ lịch sử tra cứu?")) {
+      document.getElementById("historyList").innerHTML =
+        '<li class="sidebar-empty">Chưa có lịch sử nào</li>';
+    }
+  }
+</script>
+
+</body>
+</html>
