@@ -190,6 +190,60 @@
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(13,110,110,0.1);
   }
+
+  /* ============ FILE UPLOAD ============ */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #fafbfc;
+    transition: border 0.15s, background 0.15s;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .upload-zone.has-file {
+    border-style: solid;
+    border-color: var(--success);
+    background: #f0fdf4;
+    text-align: left;
+    padding: 14px 18px;
+  }
+  .upload-icon { font-size: 32px; margin-bottom: 6px; color: var(--primary); }
+  .upload-text { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 2px; }
+  .upload-hint { font-size: 12px; color: var(--text-muted); }
+  .file-info { display: flex; align-items: center; gap: 12px; }
+  .file-info-icon {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: var(--success); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 11px;
+    flex-shrink: 0;
+  }
+  .file-info-text { flex: 1; min-width: 0; }
+  .file-info-name {
+    font-weight: 600; font-size: 14px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .file-info-size { font-size: 12px; color: var(--text-muted); }
+  .file-remove {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .file-remove:hover { background: var(--danger); color: white; }
+
   .btn {
     padding: 11px 22px;
     border-radius: 8px;
@@ -617,13 +671,31 @@
     <!-- SEARCH FORM -->
     <section class="search-card">
       <h2>Tra cứu chuyên luận</h2>
-      <p class="subtitle">Nhập hoạt chất (bắt buộc) và dạng bào chế (tùy chọn). Hệ thống sẽ tự sửa chính tả, dịch sang chuẩn BP và tìm trên DĐVN, USP, BP.</p>
+      <p class="subtitle">Nhập tên hoạt chất để tra cứu, hoặc upload file PDF/DOCX để so sánh thêm. Có thể dùng cả 2 cùng lúc.</p>
       <form id="searchForm" onsubmit="handleSearch(event)">
+        <!-- FILE UPLOAD -->
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="fileInput" accept=".pdf,.docx" hidden>
+          <div id="uploadPrompt">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">Kéo & thả file vào đây hoặc <u>chọn file</u></div>
+            <div class="upload-hint">PDF hoặc DOCX · Tối đa 20MB · <b>Tùy chọn</b></div>
+          </div>
+          <div id="uploadFileInfo" class="file-info" style="display:none;">
+            <div class="file-info-icon" id="fileTypeIcon">PDF</div>
+            <div class="file-info-text">
+              <div class="file-info-name" id="fileNameDisplay"></div>
+              <div class="file-info-size" id="fileSizeDisplay"></div>
+            </div>
+            <button class="file-remove" type="button" id="removeFileBtn">✕ Bỏ</button>
+          </div>
+        </div>
+
         <div class="form-row">
           <div class="form-field">
-            <label for="activeIngredient">Tên hoạt chất *</label>
-            <input type="text" id="activeIngredient" placeholder="Vd: Paracetamol, Amoxicillin..." required>
-            <div class="field-note">Hệ thống sẽ tự sửa chính tả (Paracetamon → Paracetamol)</div>
+            <label for="activeIngredient">Tên hoạt chất <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(* nếu không upload file)</span></label>
+            <input type="text" id="activeIngredient" placeholder="Vd: Paracetamol, Amoxicillin... (hoặc upload file bên trên)">
+            <div class="field-note">Hệ thống tự sửa chính tả · Nếu có file, AI sẽ dùng cả file + tên hoạt chất</div>
           </div>
           <div class="form-field">
             <label for="dosageForm">Dạng bào chế <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(tùy chọn)</span></label>
@@ -895,10 +967,15 @@
   async function handleSearch(e) {
     e.preventDefault();
     const ingredient = document.getElementById("activeIngredient").value.trim();
-    const form = document.getElementById("dosageForm").value.trim();   // có thể rỗng
+    const form = document.getElementById("dosageForm").value.trim();
     const webhookUrl = document.getElementById("webhookUrl").value.trim();
     const useDemoData = document.getElementById("useDemoData").checked;
-    if (!ingredient) return;
+    
+    // Cần ÍT NHẤT 1 trong 2: tên hoạt chất HOẶC file
+    if (!ingredient && !window._selectedFile) {
+      alert("Vui lòng nhập tên hoạt chất HOẶC upload file (PDF/DOCX) — cần ít nhất 1 trong 2.");
+      return;
+    }
 
     // Hide result, show loading
     document.getElementById("resultSection").classList.remove("active");
@@ -935,21 +1012,39 @@
       return;
     }
 
-    // Real webhook call
+    // Real webhook call - chọn FormData nếu có file, hoặc JSON nếu không
     try {
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          "Tên hoạt chất": ingredient,
-          "Dạng bào chế": form,
-          // Backup keys in case workflow uses English
-          "active_ingredient": ingredient,
-          "dosage_form": form,
-          // Flag báo cho n8n biết user để trống dạng bào chế
-          "search_all_forms": form === ""
-        })
-      });
+      let response;
+      if (window._selectedFile) {
+        // === MODE 1: Upload file (multipart/form-data) ===
+        const formData = new FormData();
+        formData.append("file", window._selectedFile, window._selectedFile.name);
+        formData.append("Tên hoạt chất", ingredient);
+        formData.append("Dạng bào chế", form);
+        formData.append("active_ingredient", ingredient);
+        formData.append("dosage_form", form);
+        formData.append("search_all_forms", form === "" ? "1" : "0");
+        formData.append("ai_detect_ingredient", ingredient === "" ? "1" : "0");
+        formData.append("has_file", "1");
+        response = await fetch(webhookUrl, {
+          method: "POST",
+          body: formData  // browser tự set Content-Type với boundary
+        });
+      } else {
+        // === MODE 2: Chỉ tên hoạt chất (JSON, giữ tương thích flow cũ) ===
+        response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            "Tên hoạt chất": ingredient,
+            "Dạng bào chế": form,
+            "active_ingredient": ingredient,
+            "dosage_form": form,
+            "search_all_forms": form === "",
+            "has_file": false
+          })
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} — ${response.statusText}`);
@@ -1125,6 +1220,88 @@
         '<li class="sidebar-empty">Chưa có lịch sử nào</li>';
     }
   }
+
+  // ============ FILE UPLOAD ============
+  (function setupFileUpload() {
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+    const uploadPrompt = document.getElementById("uploadPrompt");
+    const uploadFileInfo = document.getElementById("uploadFileInfo");
+    const fileNameEl = document.getElementById("fileNameDisplay");
+    const fileSizeEl = document.getElementById("fileSizeDisplay");
+    const fileTypeIcon = document.getElementById("fileTypeIcon");
+    const removeFileBtn = document.getElementById("removeFileBtn");
+    
+    if (!dropZone) return;  // safety guard
+    
+    dropZone.addEventListener("click", (e) => {
+      if (e.target === removeFileBtn || removeFileBtn.contains(e.target)) return;
+      if (!window._selectedFile) fileInput.click();
+    });
+    
+    ["dragenter", "dragover"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach(ev => {
+      dropZone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove("dragover");
+      });
+    });
+    dropZone.addEventListener("drop", (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length) handleFile(files[0]);
+    });
+    
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+    
+    removeFileBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearFile();
+    });
+    
+    function handleFile(file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+      if (!["pdf", "docx"].includes(ext)) {
+        alert("Chỉ chấp nhận file PDF hoặc DOCX");
+        return;
+      }
+      if (file.size > 20 * 1024 * 1024) {
+        alert("File quá lớn (>20MB)");
+        return;
+      }
+      window._selectedFile = file;
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = formatBytes(file.size);
+      fileTypeIcon.textContent = ext.toUpperCase();
+      fileTypeIcon.style.background = ext === "pdf" ? "#dc2626" : "#2563eb";
+      uploadPrompt.style.display = "none";
+      uploadFileInfo.style.display = "flex";
+      dropZone.classList.add("has-file");
+    }
+    
+    function clearFile() {
+      window._selectedFile = null;
+      fileInput.value = "";
+      uploadPrompt.style.display = "block";
+      uploadFileInfo.style.display = "none";
+      dropZone.classList.remove("has-file");
+    }
+    
+    function formatBytes(b) {
+      if (b < 1024) return b + " B";
+      if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
+      return (b / 1024 / 1024).toFixed(2) + " MB";
+    }
+  })();
+
 </script>
 
 </body>
