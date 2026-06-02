@@ -971,9 +971,9 @@
     const webhookUrl = document.getElementById("webhookUrl").value.trim();
     const useDemoData = document.getElementById("useDemoData").checked;
     
-    // Cần ÍT NHẤT 1 trong 2: tên hoạt chất HOẶC file
-    if (!ingredient && !window._selectedFile) {
-      alert("Vui lòng nhập tên hoạt chất HOẶC upload file (PDF/DOCX) — cần ít nhất 1 trong 2.");
+    // Cần ÍT NHẤT 1 trong 3: tên hoạt chất, dạng bào chế, HOẶC file
+    if (!ingredient && !form && !window._selectedFile) {
+      alert("Vui lòng nhập tên hoạt chất, hoặc dạng bào chế, hoặc upload file — cần ít nhất 1.");
       return;
     }
 
@@ -1193,9 +1193,11 @@
 
   function updateResultHeader(ingredient, form) {
     const titleEl = document.querySelector(".result-title");
-    const titleText = form 
+    const titleText = ingredient && form
       ? `📋 ${ingredient} — ${form} `
-      : `📋 ${ingredient} (tất cả dạng bào chế) `;
+      : ingredient
+        ? `📋 ${ingredient} (tất cả dạng bào chế) `
+        : `📋 ${form} (tra theo dạng bào chế) `;
     titleEl.childNodes[0].nodeValue = titleText;
     const now = new Date();
     const dateStr = now.toLocaleString("vi-VN");
