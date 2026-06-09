@@ -244,6 +244,33 @@
   }
   .file-remove:hover { background: var(--danger); color: white; }
 
+  /* ============ IMAGE PREVIEW ============ */
+  .img-preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+  }
+  .img-thumb {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--success);
+    flex-shrink: 0;
+    background: #f1f5f9;
+  }
+  .img-meta { flex: 1; min-width: 0; }
+  .img-meta .file-info-name {
+    font-weight: 600;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .img-meta .file-info-size { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .img-meta .img-dims { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
   .btn {
     padding: 11px 22px;
     border-radius: 8px;
@@ -649,18 +676,7 @@
   <aside class="sidebar">
     <h3>📂 Lịch sử tra cứu</h3>
     <ul class="history-list" id="historyList">
-      <li class="history-item active" onclick="loadHistoryItem(0)">
-        <div>Paracetamol — Viên nén</div>
-        <div class="meta">15/05/2026 · 3 nguồn</div>
-      </li>
-      <li class="history-item" onclick="loadHistoryItem(1)">
-        <div>Amoxicillin — Viên nang</div>
-        <div class="meta">14/05/2026 · 2 nguồn</div>
-      </li>
-      <li class="history-item" onclick="loadHistoryItem(2)">
-        <div>Ibuprofen — Hỗn dịch</div>
-        <div class="meta">12/05/2026 · 3 nguồn</div>
-      </li>
+      <li class="sidebar-empty">Chưa có lịch sử nào</li>
     </ul>
     <button class="btn btn-ghost" style="width:100%; margin-top:12px; text-align:left;" onclick="clearHistory()">🗑️ Xóa lịch sử</button>
   </aside>
@@ -671,16 +687,17 @@
     <!-- SEARCH FORM -->
     <section class="search-card">
       <h2>Tra cứu chuyên luận</h2>
-      <p class="subtitle">Nhập tên hoạt chất để tra cứu, hoặc upload file PDF/DOCX để so sánh thêm. Có thể dùng cả 2 cùng lúc.</p>
+      <p class="subtitle">Gõ tên thuốc, hoặc upload ảnh TCTP / nhãn thuốc / file PDF / DOCX — AI sẽ tự phân tích và so sánh dược điển. Có thể dùng cả hai cùng lúc.</p>
       <form id="searchForm" onsubmit="handleSearch(event)">
         <!-- FILE UPLOAD -->
         <div class="upload-zone" id="dropZone">
-          <input type="file" id="fileInput" accept=".pdf,.docx" hidden>
+          <input type="file" id="fileInput" accept=".pdf,.docx,.png,.jpg,.jpeg,.webp,.gif" hidden>
           <div id="uploadPrompt">
-            <div class="upload-icon">📄</div>
-            <div class="upload-text">Kéo & thả file vào đây hoặc <u>chọn file</u></div>
-            <div class="upload-hint">PDF hoặc DOCX · Tối đa 20MB · <b>Tùy chọn</b></div>
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">Kéo & thả hoặc <u>chọn file</u></div>
+            <div class="upload-hint">📷 Ảnh chụp TCTP / nhãn thuốc &nbsp;·&nbsp; 📄 PDF / DOCX chuyên luận &nbsp;·&nbsp; Tối đa 20MB &nbsp;·&nbsp; <b>Tùy chọn</b></div>
           </div>
+          <!-- Hiển thị khi file là PDF/DOCX -->
           <div id="uploadFileInfo" class="file-info" style="display:none;">
             <div class="file-info-icon" id="fileTypeIcon">PDF</div>
             <div class="file-info-text">
@@ -689,57 +706,27 @@
             </div>
             <button class="file-remove" type="button" id="removeFileBtn">✕ Bỏ</button>
           </div>
+          <!-- Hiển thị khi file là ảnh -->
+          <div id="uploadImageInfo" style="display:none; width:100%;">
+            <div class="img-preview-wrap">
+              <img id="imgThumb" class="img-thumb" src="" alt="preview">
+              <div class="img-meta">
+                <div class="file-info-name" id="imgNameDisplay"></div>
+                <div class="file-info-size" id="imgSizeDisplay"></div>
+                <div class="img-dims" id="imgDimsDisplay"></div>
+              </div>
+              <button class="file-remove" type="button" id="removeImgBtn">✕ Bỏ</button>
+            </div>
+          </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-row" style="grid-template-columns: 1fr auto;">
           <div class="form-field">
-            <label for="activeIngredient">Tên hoạt chất <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(* nếu không upload file)</span></label>
-            <input type="text" id="activeIngredient" placeholder="Vd: Paracetamol, Amoxicillin... (hoặc upload file bên trên)">
-            <div class="field-note">Hệ thống tự sửa chính tả · Nếu có file, AI sẽ dùng cả file + tên hoạt chất</div>
-          </div>
-          <div class="form-field">
-            <label for="dosageForm">Dạng bào chế <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(tùy chọn)</span></label>
-            <input type="text" id="dosageForm" list="dosageFormSuggestions" placeholder="Vd: Viên nén, Hỗn dịch uống... (để trống nếu tra nguyên liệu)" autocomplete="off">
-            <div class="field-note">Để trống để tra cứu nguyên liệu/hoạt chất (không gắn dạng bào chế cụ thể)</div>
-            <datalist id="dosageFormSuggestions">
-              <option value="Viên nén">
-              <option value="Viên nén bao phim">
-              <option value="Viên nén bao đường">
-              <option value="Viên nén sủi bọt">
-              <option value="Viên nén nhai">
-              <option value="Viên nén ngậm">
-              <option value="Viên nén giải phóng kéo dài">
-              <option value="Viên nang cứng">
-              <option value="Viên nang mềm">
-              <option value="Viên đặt">
-              <option value="Viên hoàn">
-              <option value="Bột pha hỗn dịch">
-              <option value="Bột pha tiêm">
-              <option value="Bột pha uống">
-              <option value="Cốm">
-              <option value="Cốm sủi">
-              <option value="Hỗn dịch uống">
-              <option value="Hỗn dịch tiêm">
-              <option value="Nhũ tương">
-              <option value="Siro">
-              <option value="Dung dịch uống">
-              <option value="Dung dịch tiêm">
-              <option value="Dung dịch truyền">
-              <option value="Dung dịch nhỏ mắt">
-              <option value="Dung dịch nhỏ mũi">
-              <option value="Thuốc tiêm đông khô">
-              <option value="Thuốc đặt âm đạo">
-              <option value="Thuốc đặt trực tràng">
-              <option value="Kem bôi da">
-              <option value="Mỡ bôi da">
-              <option value="Gel">
-              <option value="Thuốc xịt mũi">
-              <option value="Thuốc xịt họng">
-              <option value="Khí dung">
-              <option value="Miếng dán">
-              <option value="Nguyên liệu (API)">
-            </datalist>
-            <div class="field-note">Gõ tự do hoặc chọn từ gợi ý · Sẽ dịch sang chuẩn BP English</div>
+            <label for="searchQuery">Tên thuốc / hoạt chất <span style="color:var(--text-muted); font-weight:normal; font-size:13px;">(để trống nếu đã upload file)</span></label>
+            <input type="text" id="searchQuery"
+              placeholder="Vd: Adrenaline BFS 5mg, Paracetamol viên nén, Amoxicillin..."
+              autocomplete="off">
+            <div class="field-note">Gõ tự do — AI tự nhận dạng hoạt chất & dạng bào chế · Hệ thống tự sửa chính tả</div>
           </div>
           <div class="form-field">
             <label>&nbsp;</label>
@@ -764,221 +751,40 @@
     </section>
 
     <!-- RESULT -->
-    <section class="result active" id="resultSection">
-
-      <!-- HEADER -->
-      <div class="result-header">
-        <div>
-          <div class="result-title">📋 Paracetamol — Viên nén</div>
-          <small>Tra cứu lúc 15/05/2026 14:32 · ID: WF-2026051501</small>
-        </div>
-        <div class="result-actions">
-          <button class="btn btn-secondary" onclick="window.print()">🖨️ In / Lưu PDF</button>
-          <button class="btn btn-secondary" onclick="alert('Đã lưu vào lịch sử')">💾 Lưu lịch sử</button>
-        </div>
-      </div>
-
-      <!-- THÔNG TIN HOẠT CHẤT -->
-      <div class="info-card">
-        <h3>🧪 Thông tin hoạt chất (sau khi chuẩn hóa)</h3>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="label">Nhập gốc</div>
-            <div class="value">Paracetamol</div>
-          </div>
-          <div class="info-item">
-            <div class="label">Đã sửa chính tả</div>
-            <div class="value">Paracetamol</div>
-          </div>
-          <div class="info-item">
-            <div class="label">Tên INN chuẩn</div>
-            <div class="value">Paracetamol</div>
-          </div>
-          <div class="info-item">
-            <div class="label">Dạng bào chế (BP English)</div>
-            <div class="value">Paracetamol Tablets</div>
-          </div>
-        </div>
-        <div style="margin-top: 14px;">
-          <div class="label" style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:600; margin-bottom: 6px;">Aliases (tên gọi khác)</div>
-          <span class="badge">Acetaminophen</span>
-          <span class="badge">APAP</span>
-          <span class="badge">N-acetyl-p-aminophenol</span>
-        </div>
-      </div>
-
-      <!-- NGUỒN -->
-      <div class="info-card">
-        <h3>📚 Nguồn dược điển tìm được <span class="badge success">3 nguồn</span></h3>
-        <div class="sources-list">
-          <div class="source-chip">DƯỢC ĐIỂN VIỆT NAM V</div>
-          <div class="source-chip">USP - DƯỢC ĐIỂN MỸ (43)</div>
-          <div class="source-chip">BP - DƯỢC ĐIỂN ANH (2024)</div>
-        </div>
-        <div class="note-box info" style="margin-top:14px;">
-          <b>Lưu ý quan trọng:</b> Dược điển Việt Nam (DĐVN) là tiêu chuẩn pháp lý bắt buộc tại Việt Nam, được đặt làm cột đầu tiên trong bảng so sánh.
-        </div>
-      </div>
-
-      <!-- BẢNG SO SÁNH -->
-      <div class="info-card">
-        <h3>📊 Bảng so sánh tiêu chuẩn</h3>
-        <div class="table-wrap">
-          <table class="comparison">
-            <thead>
-              <tr>
-                <th>Chỉ tiêu</th>
-                <th>DĐVN V<br><small style="font-weight:400;opacity:0.85;">(Viên nén Paracetamol)</small></th>
-                <th>USP 43<br><small style="font-weight:400;opacity:0.85;">(Acetaminophen Tablets)</small></th>
-                <th>BP 2024<br><small style="font-weight:400;opacity:0.85;">(Paracetamol Tablets)</small></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Định tính (Identification)</td>
-                <td>A. HPLC; B. UV: λmax = 243 nm; C. Phản ứng màu Fe³⁺</td>
-                <td>A. IR; B. HPLC; C. UV trong methanol</td>
-                <td>A. IR; B. TLC; C. Phản ứng nhóm OH-phenol</td>
-              </tr>
-              <tr>
-                <td>Hàm lượng (Assay)</td>
-                <td>Phương pháp: HPLC<br>Giới hạn: <b>95,0 – 105,0%</b></td>
-                <td>Phương pháp: HPLC<br>Giới hạn: <b>90,0 – 110,0%</b></td>
-                <td>Phương pháp: HPLC<br>Giới hạn: <b>95,0 – 105,0%</b></td>
-              </tr>
-              <tr>
-                <td>Tạp chất liên quan</td>
-                <td>p-aminophenol ≤ 0,05%<br>Tạp khác ≤ 0,1%<br>Tổng tạp ≤ 0,2%</td>
-                <td>p-aminophenol ≤ 0,005%<br>Tạp chất K ≤ 0,1%<br>Tổng tạp ≤ 0,2%</td>
-                <td>Tạp J ≤ 0,1%<br>Tạp K ≤ 0,1%<br>Tổng tạp ≤ 0,3%</td>
-              </tr>
-              <tr>
-                <td>Độ hòa tan (Dissolution)</td>
-                <td>Đệm phosphat pH 5,8; cánh khuấy 50 rpm<br>Q = 80% trong 30 phút</td>
-                <td>Phosphate buffer pH 5,8; paddle 50 rpm<br>Q = 80% trong 30 phút</td>
-                <td>Phosphate buffer pH 5,8; paddle 50 rpm<br>Q = 75% trong 45 phút</td>
-              </tr>
-              <tr>
-                <td>Độ đồng đều đơn vị liều</td>
-                <td>Đạt yêu cầu Phụ lục 11.2</td>
-                <td>Đạt USP &lt;905&gt;</td>
-                <td>Đạt Appendix XII C</td>
-              </tr>
-              <tr>
-                <td>Mất khối lượng do làm khô</td>
-                <td>≤ 0,5%</td>
-                <td><span class="empty-cell">Không quy định</span></td>
-                <td>≤ 0,5%</td>
-              </tr>
-              <tr>
-                <td>Giới hạn kim loại nặng</td>
-                <td>≤ 20 ppm</td>
-                <td>Đạt USP &lt;231&gt;</td>
-                <td>≤ 20 ppm</td>
-              </tr>
-              <tr>
-                <td>HPLC — Cột phân tích</td>
-                <td>C18, 250×4,6 mm, 5 μm</td>
-                <td>L1 (C18), 250×4,6 mm, 5 μm</td>
-                <td>End-capped C18, 250×4,6 mm, 5 μm</td>
-              </tr>
-              <tr>
-                <td>HPLC — Bước sóng</td>
-                <td>243 nm</td>
-                <td>243 nm</td>
-                <td>243 nm</td>
-              </tr>
-              <tr>
-                <td>HPLC — Tốc độ dòng</td>
-                <td>1,5 mL/phút</td>
-                <td>1,5 mL/phút</td>
-                <td>1,5 mL/phút</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ĐÁNH GIÁ -->
-      <div class="info-card analysis-section">
-        <h3>⚖️ Đánh giá mức độ khắt khe</h3>
-
-        <h4>1. Khác biệt về giới hạn hàm lượng</h4>
-        <ul>
-          <li><b>DĐVN V và BP 2024</b> đều quy định 95,0 – 105,0% — khắt khe hơn USP.</li>
-          <li><b>USP 43</b> cho phép biên độ rộng hơn: 90,0 – 110,0%.</li>
-        </ul>
-
-        <h4>2. Khác biệt về tạp chất</h4>
-        <ul>
-          <li><b>USP nghiêm ngặt nhất với p-aminophenol</b>: giới hạn 0,005% — thấp hơn 10 lần so với DĐVN (0,05%).</li>
-          <li><b>BP và USP</b> định danh cụ thể tạp J, K theo Ph. Eur. — chi tiết hơn DĐVN.</li>
-          <li><b>BP</b> cho phép tổng tạp cao hơn (0,3%) so với DĐVN và USP (0,2%).</li>
-        </ul>
-
-        <h4>3. Khác biệt về độ hòa tan</h4>
-        <ul>
-          <li><b>DĐVN và USP</b>: Q = 80% trong 30 phút (khắt khe hơn).</li>
-          <li><b>BP</b>: Q = 75% trong 45 phút (linh hoạt hơn).</li>
-        </ul>
-
-        <div class="note-box success">
-          <b>Kết luận:</b> Tiêu chuẩn nghiêm ngặt nhất tổng thể là <b>USP 43</b> (tạp p-aminophenol cực thấp 0,005%), tiếp theo là <b>DĐVN V</b> (hàm lượng chặt, hoà tan nhanh), <b>BP 2024</b> chi tiết về tạp định danh nhưng tổng tạp rộng nhất.
-        </div>
-      </div>
-
-      <!-- LƯU Ý QC -->
-      <div class="info-card analysis-section">
-        <h3>✅ Tổng kết và lưu ý kiểm nghiệm</h3>
-
-        <h4>Đối với R&D</h4>
-        <ul>
-          <li>Khi phát triển công thức nhắm xuất khẩu sang thị trường Mỹ, cần kiểm soát p-aminophenol ở mức ≤ 0,005% — đòi hỏi nguồn nguyên liệu API chất lượng cao.</li>
-          <li>Cần xây dựng quy trình HPLC chung phù hợp cả 3 dược điển (cùng cột C18, λ = 243 nm, dòng 1,5 mL/min).</li>
-        </ul>
-
-        <h4>Đối với QA/QC</h4>
-        <ul>
-          <li>Nếu áp dụng DĐVN V: kiểm tra <b>p-aminophenol ≤ 0,05%</b>, hàm lượng <b>95-105%</b>, hoà tan <b>Q=80%/30 phút</b>.</li>
-          <li>Bộ tiêu chuẩn nội bộ nên lấy giới hạn nghiêm khắc nhất từ cả 3 dược điển để đảm bảo tính phổ quát.</li>
-          <li>Lưu ý chuẩn so sánh p-aminophenol theo Ph. Eur. (cùng nguồn với BP và USP) để chuẩn hoá kết quả.</li>
-        </ul>
-
-        <h4>Khuyến nghị tiêu chuẩn áp dụng</h4>
-        <div class="note-box warning">
-          <b>Khuyến nghị:</b> Áp dụng <b>DĐVN V</b> làm tiêu chuẩn pháp lý cho thị trường Việt Nam. Đồng thời lập tiêu chuẩn nội bộ kết hợp giới hạn p-aminophenol theo USP (0,005%) để đảm bảo xuất khẩu được sang Mỹ/EU.
-        </div>
-      </div>
-
+    <section class="result" id="resultSection">
+      <!-- nội dung được inject bởi JS sau khi tra cứu -->
     </section>
+
+    <!-- EMPTY STATE (hiển thị khi chưa có kết quả) -->
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🔬</div>
+      <h3>Sẵn sàng tra cứu</h3>
+      <p>Nhập tên thuốc hoặc upload ảnh / PDF / DOCX<br>để AI so sánh tiêu chuẩn giữa DĐVN · USP · BP</p>
+    </div>
 
   </main>
 </div>
 
 <script>
-  // ============ Sample data for prototype ============
-  const sampleHistory = [
-    { name: "Paracetamol", form: "Viên nén", date: "15/05/2026", sources: 3 },
-    { name: "Amoxicillin", form: "Viên nang", date: "14/05/2026", sources: 2 },
-    { name: "Ibuprofen", form: "Hỗn dịch", date: "12/05/2026", sources: 3 }
-  ];
+  // ============ History ============
+  const sampleHistory = [];
 
   // ============ Search handler ============
   async function handleSearch(e) {
     e.preventDefault();
-    const ingredient = document.getElementById("activeIngredient").value.trim();
-    const form = document.getElementById("dosageForm").value.trim();
+    const query      = document.getElementById("searchQuery").value.trim();
     const webhookUrl = document.getElementById("webhookUrl").value.trim();
     const useDemoData = document.getElementById("useDemoData").checked;
-    
-    // Cần ÍT NHẤT 1 trong 3: tên hoạt chất, dạng bào chế, HOẶC file
-    if (!ingredient && !form && !window._selectedFile) {
-      alert("Vui lòng nhập tên hoạt chất, hoặc dạng bào chế, hoặc upload file — cần ít nhất 1.");
+
+    // Cần ÍT NHẤT 1 trong 2: query hoặc file
+    if (!query && !window._selectedFile) {
+      alert("Vui lòng nhập tên thuốc hoặc upload file (ảnh / PDF / DOCX) — cần ít nhất 1.");
       return;
     }
 
-    // Hide result, show loading
+    // Hide result + empty state, show loading
     document.getElementById("resultSection").classList.remove("active");
+    document.getElementById("emptyState").style.display = "none";
     document.getElementById("loadingState").classList.add("active");
     document.getElementById("searchBtn").disabled = true;
 
@@ -1007,40 +813,34 @@
         finishLoading(stepTimer, steps);
         document.getElementById("resultSection").classList.add("active");
         document.getElementById("searchBtn").disabled = false;
-        updateResultHeader(ingredient, form);
+        updateResultHeader(query, "");
       }, 4000);
       return;
     }
 
-    // Real webhook call - chọn FormData nếu có file, hoặc JSON nếu không
+    // Real webhook call - FormData nếu có file, JSON nếu chỉ có text
     try {
       let response;
       if (window._selectedFile) {
-        // === MODE 1: Upload file (multipart/form-data) ===
+        // === MODE 1: Có file (multipart/form-data) ===
+        const ext = window._selectedFile.name.split(".").pop().toLowerCase();
+        const isImage = ["png","jpg","jpeg","webp","gif"].includes(ext);
         const formData = new FormData();
-        formData.append("file", window._selectedFile, window._selectedFile.name);
-        formData.append("Tên hoạt chất", ingredient);
-        formData.append("Dạng bào chế", form);
-        formData.append("active_ingredient", ingredient);
-        formData.append("dosage_form", form);
-        formData.append("search_all_forms", form === "" ? "1" : "0");
-        formData.append("ai_detect_ingredient", ingredient === "" ? "1" : "0");
+        formData.append(isImage ? "image" : "file", window._selectedFile, window._selectedFile.name);
+        formData.append("file_type", isImage ? "image" : "document");
+        formData.append("query", query);
         formData.append("has_file", "1");
         response = await fetch(webhookUrl, {
           method: "POST",
-          body: formData  // browser tự set Content-Type với boundary
+          body: formData
         });
       } else {
-        // === MODE 2: Chỉ tên hoạt chất (JSON, giữ tương thích flow cũ) ===
+        // === MODE 2: Chỉ text (JSON) ===
         response = await fetch(webhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            "Tên hoạt chất": ingredient,
-            "Dạng bào chế": form,
-            "active_ingredient": ingredient,
-            "dosage_form": form,
-            "search_all_forms": form === "",
+            "query": query,
             "has_file": false
           })
         });
@@ -1064,13 +864,13 @@
       }
 
       finishLoading(stepTimer, steps);
-      renderWebhookResponse(data, ingredient, form);
+      renderWebhookResponse(data, query);
       document.getElementById("resultSection").classList.add("active");
       document.getElementById("searchBtn").disabled = false;
 
     } catch (err) {
       finishLoading(stepTimer, steps);
-      showError(err.message, ingredient, form);
+      showError(err.message, query);
       document.getElementById("searchBtn").disabled = false;
     }
   }
@@ -1082,7 +882,7 @@
   }
 
   // ============ Render real response from n8n ============
-  function renderWebhookResponse(data, ingredient, form) {
+  function renderWebhookResponse(data, query) {
     // n8n usually wraps response in array; unwrap
     if (Array.isArray(data)) data = data[0] || {};
 
@@ -1104,7 +904,7 @@
       resultSection.innerHTML = `
         <div class="result-header">
           <div>
-            <div class="result-title">📋 ${escapeHtml(ingredient)} — ${escapeHtml(form)}</div>
+            <div class="result-title">📋 ${escapeHtml(query) || "(từ file upload)"}</div>
             <small>Phản hồi từ webhook (không có markdown output)</small>
           </div>
           <div class="result-actions">
@@ -1128,12 +928,12 @@
     resultSection.innerHTML = `
       <div class="result-header">
         <div>
-          <div class="result-title">📋 ${escapeHtml(ingredient)} — ${escapeHtml(form)}</div>
+          <div class="result-title">📋 ${escapeHtml(query) || "(từ file upload)"}</div>
           <small>Tra cứu lúc ${now.toLocaleString("vi-VN")} · ID: WF-${now.getTime().toString().slice(-10)}</small>
         </div>
         <div class="result-actions">
           <button class="btn btn-secondary" onclick="window.print()">🖨️ In / Lưu PDF</button>
-          <button class="btn btn-secondary" onclick="saveCurrentToHistory('${escapeHtml(ingredient)}','${escapeHtml(form)}')">💾 Lưu lịch sử</button>
+          <button class="btn btn-secondary" onclick="saveCurrentToHistory('${escapeHtml(query)}')">💾 Lưu lịch sử</button>
         </div>
       </div>
       <div class="info-card markdown-output">
@@ -1150,14 +950,14 @@
     });
   }
 
-  function showError(message, ingredient, form) {
+  function showError(message, query) {
     const resultSection = document.getElementById("resultSection");
     resultSection.classList.add("active");
     resultSection.innerHTML = `
       <div class="result-header">
         <div>
           <div class="result-title">❌ Lỗi kết nối webhook</div>
-          <small>${escapeHtml(ingredient)} — ${escapeHtml(form)}</small>
+          <small>${escapeHtml(query) || "(từ file upload)"}</small>
         </div>
       </div>
       <div class="info-card">
@@ -1167,10 +967,10 @@
         <h4 style="margin-top:16px; color:var(--primary-dark);">Checklist xử lý:</h4>
         <ul style="padding-left:22px; margin-top:8px;">
           <li>Workflow trong n8n đã được <b>Activate</b> chưa? (URL <code>/webhook/</code> chỉ hoạt động khi workflow active)</li>
-          <li>Workflow đã được kết nối node <b>Webhook trigger</b> → node đầu tiên (Correction)?</li>
+          <li>Workflow đã được kết nối node <b>Webhook trigger</b> → node đầu tiên chưa?</li>
           <li>Node cuối cùng có phải <b>"Respond to Webhook"</b> trả về output của AI Agent?</li>
           <li>Nếu lỗi CORS: trong n8n thêm header <code>Access-Control-Allow-Origin: *</code> ở node Respond to Webhook → Options.</li>
-          <li>Test trực tiếp bằng cURL: <code>curl -X POST '${escapeHtml(document.getElementById("webhookUrl").value)}' -H 'Content-Type: application/json' -d '{"Tên hoạt chất":"Paracetamol","Dạng bào chế":""}'</code></li>
+          <li>Test trực tiếp bằng cURL: <code>curl -X POST '${escapeHtml(document.getElementById("webhookUrl").value)}' -H 'Content-Type: application/json' -d '{"query":"Paracetamol viên nén"}'</code></li>
         </ul>
       </div>`;
   }
@@ -1181,29 +981,24 @@
     }[c]));
   }
 
-  function saveCurrentToHistory(ingredient, form) {
+  function saveCurrentToHistory(query) {
     const list = document.getElementById("historyList");
     const li = document.createElement("li");
     li.className = "history-item active";
-    li.innerHTML = `<div>${ingredient} — ${form}</div><div class="meta">${new Date().toLocaleString("vi-VN")}</div>`;
+    li.innerHTML = `<div>${escapeHtml(query) || "(file upload)"}</div><div class="meta">${new Date().toLocaleString("vi-VN")}</div>`;
     document.querySelectorAll(".history-item").forEach(it => it.classList.remove("active"));
     list.prepend(li);
     alert("Đã lưu vào lịch sử (lưu tạm trong trình duyệt)");
   }
 
-  function updateResultHeader(ingredient, form) {
+  function updateResultHeader(query) {
     const titleEl = document.querySelector(".result-title");
-    const titleText = ingredient && form
-      ? `📋 ${ingredient} — ${form} `
-      : ingredient
-        ? `📋 ${ingredient} (tất cả dạng bào chế) `
-        : `📋 ${form} (tra theo dạng bào chế) `;
-    titleEl.childNodes[0].nodeValue = titleText;
+    if (!titleEl) return;
+    titleEl.childNodes[0].nodeValue = `📋 ${query || "(từ file upload)"} `;
     const now = new Date();
-    const dateStr = now.toLocaleString("vi-VN");
     titleEl.querySelector("small")?.remove();
     const small = document.createElement("small");
-    small.textContent = `Tra cứu lúc ${dateStr} · ID: WF-${now.getTime().toString().slice(-10)}`;
+    small.textContent = `Tra cứu lúc ${now.toLocaleString("vi-VN")} · ID: WF-${now.getTime().toString().slice(-10)}`;
     titleEl.appendChild(small);
   }
 
@@ -1212,8 +1007,8 @@
       it.classList.toggle("active", i === idx);
     });
     const item = sampleHistory[idx];
-    document.getElementById("activeIngredient").value = item.name;
-    document.getElementById("dosageForm").value = item.form;
+    const qEl = document.getElementById("searchQuery");
+    if (qEl) qEl.value = item.name + (item.form ? " " + item.form : "");
   }
 
   function clearHistory() {
@@ -1225,84 +1020,113 @@
 
   // ============ FILE UPLOAD ============
   (function setupFileUpload() {
-    const dropZone = document.getElementById("dropZone");
-    const fileInput = document.getElementById("fileInput");
-    const uploadPrompt = document.getElementById("uploadPrompt");
+    const dropZone       = document.getElementById("dropZone");
+    const fileInput      = document.getElementById("fileInput");
+    const uploadPrompt   = document.getElementById("uploadPrompt");
+    // --- doc slot ---
     const uploadFileInfo = document.getElementById("uploadFileInfo");
-    const fileNameEl = document.getElementById("fileNameDisplay");
-    const fileSizeEl = document.getElementById("fileSizeDisplay");
-    const fileTypeIcon = document.getElementById("fileTypeIcon");
-    const removeFileBtn = document.getElementById("removeFileBtn");
-    
-    if (!dropZone) return;  // safety guard
-    
+    const fileNameEl     = document.getElementById("fileNameDisplay");
+    const fileSizeEl     = document.getElementById("fileSizeDisplay");
+    const fileTypeIcon   = document.getElementById("fileTypeIcon");
+    const removeFileBtn  = document.getElementById("removeFileBtn");
+    // --- image slot ---
+    const uploadImageInfo = document.getElementById("uploadImageInfo");
+    const imgThumb        = document.getElementById("imgThumb");
+    const imgNameEl       = document.getElementById("imgNameDisplay");
+    const imgSizeEl       = document.getElementById("imgSizeDisplay");
+    const imgDimsEl       = document.getElementById("imgDimsDisplay");
+    const removeImgBtn    = document.getElementById("removeImgBtn");
+
+    if (!dropZone) return;
+
+    const IMG_EXTS = ["png", "jpg", "jpeg", "webp", "gif"];
+    const DOC_EXTS = ["pdf", "docx"];
+
     dropZone.addEventListener("click", (e) => {
-      if (e.target === removeFileBtn || removeFileBtn.contains(e.target)) return;
+      const clickedRemove = removeFileBtn.contains(e.target) || removeImgBtn.contains(e.target);
+      if (clickedRemove) return;
       if (!window._selectedFile) fileInput.click();
     });
-    
+
     ["dragenter", "dragover"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.add("dragover");
-      });
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add("dragover"); });
     });
     ["dragleave", "drop"].forEach(ev => {
-      dropZone.addEventListener(ev, (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropZone.classList.remove("dragover");
-      });
+      dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove("dragover"); });
     });
     dropZone.addEventListener("drop", (e) => {
       const files = e.dataTransfer.files;
       if (files.length) handleFile(files[0]);
     });
-    
     fileInput.addEventListener("change", (e) => {
       if (e.target.files.length) handleFile(e.target.files[0]);
     });
-    
-    removeFileBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      clearFile();
-    });
-    
+    removeFileBtn.addEventListener("click", (e) => { e.stopPropagation(); clearFile(); });
+    removeImgBtn.addEventListener("click",  (e) => { e.stopPropagation(); clearFile(); });
+
     function handleFile(file) {
       const ext = file.name.split(".").pop().toLowerCase();
-      if (!["pdf", "docx"].includes(ext)) {
-        alert("Chỉ chấp nhận file PDF hoặc DOCX");
+      const isImg = IMG_EXTS.includes(ext);
+      const isDoc = DOC_EXTS.includes(ext);
+
+      if (!isImg && !isDoc) {
+        alert("Chỉ chấp nhận: PDF, DOCX, PNG, JPG, JPEG, WEBP, GIF");
         return;
       }
       if (file.size > 20 * 1024 * 1024) {
         alert("File quá lớn (>20MB)");
         return;
       }
+
       window._selectedFile = file;
-      fileNameEl.textContent = file.name;
-      fileSizeEl.textContent = formatBytes(file.size);
-      fileTypeIcon.textContent = ext.toUpperCase();
-      fileTypeIcon.style.background = ext === "pdf" ? "#dc2626" : "#2563eb";
-      uploadPrompt.style.display = "none";
-      uploadFileInfo.style.display = "flex";
       dropZone.classList.add("has-file");
+      uploadPrompt.style.display = "none";
+
+      if (isDoc) {
+        // --- document mode ---
+        uploadImageInfo.style.display = "none";
+        fileNameEl.textContent = file.name;
+        fileSizeEl.textContent = formatBytes(file.size);
+        fileTypeIcon.textContent = ext.toUpperCase();
+        fileTypeIcon.style.background = ext === "pdf" ? "#dc2626" : "#2563eb";
+        uploadFileInfo.style.display = "flex";
+      } else {
+        // --- image mode: show thumbnail ---
+        uploadFileInfo.style.display = "none";
+        imgNameEl.textContent = file.name;
+        imgSizeEl.textContent = formatBytes(file.size);
+        imgDimsEl.textContent = "Đang đọc kích thước...";
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          imgThumb.src = ev.target.result;
+          uploadImageInfo.style.display = "block";
+          // Lấy kích thước ảnh sau khi load
+          const tmp = new Image();
+          tmp.onload = () => { imgDimsEl.textContent = `${tmp.naturalWidth} × ${tmp.naturalHeight} px`; };
+          tmp.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
     }
-    
+
     function clearFile() {
       window._selectedFile = null;
       fileInput.value = "";
       uploadPrompt.style.display = "block";
       uploadFileInfo.style.display = "none";
+      uploadImageInfo.style.display = "none";
+      imgThumb.src = "";
       dropZone.classList.remove("has-file");
     }
-    
+
     function formatBytes(b) {
       if (b < 1024) return b + " B";
       if (b < 1024 * 1024) return (b / 1024).toFixed(1) + " KB";
       return (b / 1024 / 1024).toFixed(2) + " MB";
     }
   })();
+
 
 </script>
 
